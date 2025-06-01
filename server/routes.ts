@@ -36,6 +36,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const response = await fetch(searchUrl, { headers });
       
       if (!response.ok) {
+        if (response.status === 404) {
+          // 404 means no products found, return empty results
+          await storage.createSearchHistory({ query, resultCount: 0 });
+          return res.json({ products: [] });
+        }
         throw new Error(`UPC API error: ${response.status} ${response.statusText}`);
       }
 
@@ -78,8 +83,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // Handle different types of API errors with user-friendly messages
+      let userMessage = "Search failed. Please try again.";
+      
+      if (error instanceof Error) {
+        if (error.message.includes("UPC API error: 404")) {
+          userMessage = "No products found for your search. Try a different product name.";
+        } else if (error.message.includes("UPC API error: 429")) {
+          userMessage = "Too many searches. Please wait a moment and try again.";
+        } else if (error.message.includes("UPC API error: 401") || error.message.includes("UPC API error: 403")) {
+          userMessage = "Unable to search at the moment. Please try again later.";
+        } else if (error.message.includes("fetch failed") || error.message.includes("network")) {
+          userMessage = "Network error. Please check your connection and try again.";
+        }
+      }
+      
       res.status(500).json({ 
-        message: error instanceof Error ? error.message : "Search failed"
+        message: userMessage
       });
     }
   });

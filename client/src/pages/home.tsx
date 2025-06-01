@@ -72,10 +72,25 @@ export default function Home() {
       )}
       
       {data && !isPending && products.length === 0 && hasSearched && (
-        <ErrorState 
-          message="No products found matching your search. Try a different product name or check your spelling."
-          onRetry={handleRetrySearch}
-        />
+        <section className="animate-fade-in">
+          <div className="text-center py-8">
+            <div className="w-16 h-16 bg-yellow-50 dark:bg-yellow-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="material-icons text-yellow-600 text-2xl">search_off</span>
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No Products Found</h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-4 max-w-sm mx-auto">
+              We couldn't find any products matching "{searchQuery}". Try adjusting your search terms.
+            </p>
+            <div className="space-y-2 text-sm text-gray-500 dark:text-gray-400">
+              <p>Try searching for:</p>
+              <div className="flex flex-wrap justify-center gap-2 mt-2">
+                <span className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">Brand name</span>
+                <span className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">Product type</span>
+                <span className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">Model number</span>
+              </div>
+            </div>
+          </div>
+        </section>
       )}
       
       {!hasSearched && !isPending && <EmptyState />}
