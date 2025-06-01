@@ -29,6 +29,8 @@ export const insertProductSchema = createInsertSchema(products).omit({
 export const insertSearchHistorySchema = createInsertSchema(searchHistory).omit({
   id: true,
   searchedAt: true,
+}).extend({
+  resultCount: z.number().default(0),
 });
 
 export type InsertProduct = z.infer<typeof insertProductSchema>;
@@ -36,41 +38,29 @@ export type Product = typeof products.$inferSelect;
 export type InsertSearchHistory = z.infer<typeof insertSearchHistorySchema>;
 export type SearchHistory = typeof searchHistory.$inferSelect;
 
-// UPC API Response types
+// UPC API Response types - more flexible to handle various API response formats
 export const upcApiResponseSchema = z.object({
-  code: z.string(),
-  total: z.number(),
-  offset: z.number(),
+  code: z.union([z.string(), z.number()]).optional(),
+  total: z.number().optional(),
+  offset: z.number().optional(),
   items: z.array(z.object({
-    ean: z.string(),
+    ean: z.union([z.string(), z.number()]).transform(String),
     title: z.string(),
-    description: z.string().optional(),
-    upc: z.string(),
-    brand: z.string().optional(),
-    model: z.string().optional(),
-    color: z.string().optional(),
-    size: z.string().optional(),
-    dimension: z.string().optional(),
-    weight: z.string().optional(),
-    category: z.string().optional(),
-    currency: z.string().optional(),
+    description: z.union([z.string(), z.number(), z.null()]).optional().transform(val => val ? String(val) : undefined),
+    upc: z.union([z.string(), z.number()]).transform(String),
+    brand: z.union([z.string(), z.number(), z.null()]).optional().transform(val => val ? String(val) : undefined),
+    model: z.union([z.string(), z.number(), z.null()]).optional().transform(val => val ? String(val) : undefined),
+    color: z.union([z.string(), z.number(), z.null()]).optional().transform(val => val ? String(val) : undefined),
+    size: z.union([z.string(), z.number(), z.null()]).optional().transform(val => val ? String(val) : undefined),
+    dimension: z.union([z.string(), z.number(), z.null()]).optional().transform(val => val ? String(val) : undefined),
+    weight: z.union([z.string(), z.number(), z.null()]).optional().transform(val => val ? String(val) : undefined),
+    category: z.union([z.string(), z.number(), z.null()]).optional().transform(val => val ? String(val) : undefined),
+    currency: z.union([z.string(), z.number(), z.null()]).optional().transform(val => val ? String(val) : undefined),
     lowest_recorded_price: z.number().optional(),
     highest_recorded_price: z.number().optional(),
     images: z.array(z.string()).optional(),
-    offers: z.array(z.object({
-      merchant: z.string(),
-      domain: z.string(),
-      title: z.string(),
-      currency: z.string().optional(),
-      list_price: z.string().optional(),
-      price: z.number().optional(),
-      shipping: z.string().optional(),
-      condition: z.string().optional(),
-      availability: z.string().optional(),
-      link: z.string(),
-      updated_t: z.number().optional(),
-    })).optional(),
-  })),
+    offers: z.array(z.any()).optional(), // Make offers more flexible
+  })).optional().default([]),
 });
 
 export type UpcApiResponse = z.infer<typeof upcApiResponseSchema>;

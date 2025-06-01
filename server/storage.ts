@@ -39,9 +39,14 @@ export class MemStorage implements IStorage {
   async createProduct(insertProduct: InsertProduct): Promise<Product> {
     const id = this.currentProductId++;
     const product: Product = { 
-      ...insertProduct, 
+      ...insertProduct,
       id,
       searchedAt: new Date(),
+      description: insertProduct.description || null,
+      brand: insertProduct.brand || null,
+      category: insertProduct.category || null,
+      size: insertProduct.size || null,
+      image: insertProduct.image || null,
     };
     this.products.set(id, product);
     return product;
@@ -64,8 +69,9 @@ export class MemStorage implements IStorage {
   async createSearchHistory(insertSearch: InsertSearchHistory): Promise<SearchHistory> {
     const id = this.currentSearchId++;
     const search: SearchHistory = {
-      ...insertSearch,
       id,
+      query: insertSearch.query,
+      resultCount: insertSearch.resultCount ?? 0,
       searchedAt: new Date(),
     };
     this.searchHistoryItems.set(id, search);

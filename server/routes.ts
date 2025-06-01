@@ -45,23 +45,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const data = await response.json();
-      const validatedData = upcApiResponseSchema.parse(data);
+      
+      let validatedData;
+      try {
+        validatedData = upcApiResponseSchema.parse(data);
+      } catch (validationError) {
+        console.error("API response validation failed:", validationError);
+        // If API response format is unexpected, return empty results
+        await storage.createSearchHistory({ query, resultCount: 0 });
+        return res.json({ products: [] });
+      }
       
       const products = [];
       
       // Save products to local storage and prepare response
-      for (const item of validatedData.items) {
+      for (const item of validatedData.items || []) {
         const existingProduct = await storage.getProductByUpc(item.upc);
         
         if (!existingProduct) {
           const product = await storage.createProduct({
             upc: item.upc,
             title: item.title,
-            description: item.description || "",
-            brand: item.brand || "",
-            category: item.category || "",
-            size: item.size || "",
-            image: item.images?.[0] || "",
+            description: item.description || null,
+            brand: item.brand || null,
+            category: item.category || null,
+            size: item.size || null,
+            image: item.images?.[0] || null,
           });
           products.push(product);
         } else {
@@ -87,14 +96,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let userMessage = "Search failed. Please try again.";
       
       if (error instanceof Error) {
-        if (error.message.includes("UPC API error: 404")) {
+        if (error.message.includes("UPC API error: 400")) {
+          userMessage = "Invalid search request. Please check your search terms and try again.";
+        } else if (error.message.includes("UPC API error: 401")) {
+          userMessage = "Authentication failed. The service may require an API key.";
+        } else if (error.message.includes("UPC API error: 403")) {
+          userMessage = "Access denied. The service may have usage restrictions.";
+        } else if (error.message.includes("UPC API error: 404")) {
           userMessage = "No products found for your search. Try a different product name.";
         } else if (error.message.includes("UPC API error: 429")) {
           userMessage = "Too many searches. Please wait a moment and try again.";
-        } else if (error.message.includes("UPC API error: 401") || error.message.includes("UPC API error: 403")) {
-          userMessage = "Unable to search at the moment. Please try again later.";
-        } else if (error.message.includes("fetch failed") || error.message.includes("network")) {
+        } else if (error.message.includes("UPC API error: 500")) {
+          userMessage = "The search service is temporarily unavailable. Please try again later.";
+        } else if (error.message.includes("UPC API error: 502") || error.message.includes("UPC API error: 503")) {
+          userMessage = "The search service is experiencing issues. Please try again in a few minutes.";
+        } else if (error.message.includes("UPC API error: 504")) {
+          userMessage = "Search request timed out. Please try again.";
+        } else if (error.message.includes("fetch failed") || error.message.includes("network") || error.message.includes("ENOTFOUND") || error.message.includes("ECONNREFUSED")) {
           userMessage = "Network error. Please check your connection and try again.";
+        } else if (error.message.includes("timeout")) {
+          userMessage = "Request timed out. Please try again.";
         }
       }
       
