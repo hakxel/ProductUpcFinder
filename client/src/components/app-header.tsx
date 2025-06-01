@@ -32,7 +32,7 @@ export default function AppHeader() {
       <div className="max-w-md mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <span className="material-icons text-2xl">qr_code_scanner</span>
+            <img src="/icon-72.png" alt="UPC Finder" className="w-8 h-8" />
             <h1 className="text-xl font-medium">UPC Finder</h1>
           </div>
           {installPrompt && (
